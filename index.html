@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Clock In/Out</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 15px;
+      background: #f0f4f8;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    h1 {
+      font-size: 1.5em;
+      text-align: center;
+    }
+    .container {
+      display: flex;
+      flex-direction: column; /* Forces single column for mobile */
+      gap: 20px;
+      width: 100%;
+      max-width: 400px; /* Keeps it readable on larger screens */
+    }
+    .card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      padding: 20px;
+      text-align: center;
+    }
+    h2 {
+      margin-top: 0;
+      color: #333;
+    }
+    button {
+      padding: 15px 25px; /* Larger buttons for easier tapping */
+      margin: 10px 5px;
+      font-size: 1.1em;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      width: 40%; /* Side by side buttons */
+    }
+    .clock-in {
+      background-color: #4caf50;
+      color: white;
+    }
+    .clock-in:disabled {
+      background-color: #ccc;
+    }
+    .clock-out {
+      background-color: #f44336;
+      color: white;
+    }
+    .location-btn {
+      background-color: #1976d2;
+      color: white;
+      padding: 12px 20px;
+      margin: 5px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .log {
+      margin-top: 15px;
+      text-align: left;
+      font-size: 0.85em;
+      background: #f9f9f9;
+      padding: 10px;
+      border-radius: 8px;
+      max-height: 120px;
+      overflow-y: auto;
+      border: 1px solid #eee;
+    }
+    #location-display {
+      font-size: 1.1em;
+      min-height: 1.2em;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Painting Crew Clock</h1>
+
+<div style="text-align:center; margin-bottom: 25px; width: 100%; max-width: 400px;">
+  <strong>Select Project Location:</strong><br>
+  <button class="location-btn" onclick="selectLocation('Citrus')">Citrus</button>
+  <button class="location-btn" onclick="selectLocation('Holt')">Holt</button>
+  <button class="location-btn" onclick="selectLocation('Sycamore')">Sycamore</button>
+  <p id="location-display" style="margin-top: 10px; font-weight: bold; color: #1976d2;"></p>
+  <p id="la-time" style="margin-top: 5px; font-size: 0.9em; color:#555;"></p>
+</div>
+
+<div class="container">
+  <div class="card">
+    <h2>Juventino</h2>
+    <button class="clock-in" onclick="logTime('Juventino', 'in')" disabled>In</button>
+    <button class="clock-out" onclick="logTime('Juventino', 'out')">Out</button>
+    <div class="log" id="log-Juventino"></div>
+  </div>
+
+  <div class="card">
+    <h2>Pedro</h2>
+    <button class="clock-in" onclick="logTime('Pedro', 'in')" disabled>In</button>
+    <button class="clock-out" onclick="logTime('Pedro', 'out')">Out</button>
+    <div class="log" id="log-Pedro"></div>
+  </div>
+
+  </div>
+
+<script>
+  // Last Updated: 2026-01-21 08:49:15
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw8Vxe6ACUYiHQYqZx0BEhdGnSioHXzgM9b7Hhz2k1gOLXB9bwxYZMKKNUWLZ6mcU8fFA/exec";
+
+  let selectedLocation = null;
+
+  function selectLocation(location) {
+    selectedLocation = location;
+    document.getElementById('location-display').textContent = "Current Site: " + location;
+    document.querySelectorAll('.clock-in').forEach(btn => btn.disabled = false);
+  }
+
+  function updateLATime() {
+    const options = {
+      timeZone: 'America/Los_Angeles',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
+    };
+    const now = new Date().toLocaleTimeString('en-US', options);
+    document.getElementById('la-time').textContent = "LA Time: " + now;
+  }
+  setInterval(updateLATime, 1000);
+  updateLATime();
+
+  function logTime(name, action) {
+    if (action === 'in' && !selectedLocation) {
+      alert("Please select a location first!");
+      return;
+    }
+
+    const displayTime = new Date().toLocaleString('en-US', { 
+        timeZone: 'America/Los_Angeles',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+
+    const logDiv = document.getElementById('log-' + name);
+    const logEntry = document.createElement('div');
+    logEntry.style.borderBottom = "1px solid #eee";
+    logEntry.style.padding = "2px 0";
+    logEntry.textContent = `${displayTime} - ${action.toUpperCase()}` +
+                           (action === 'in' ? ` @ ${selectedLocation}` : "");
+    logDiv.prepend(logEntry);
+
+    const formData = new URLSearchParams();
+    formData.append('name', name);
+    formData.append('in_or_out', action);
+    formData.append('location', selectedLocation || '');
+
+    fetch(SCRIPT_URL, {
+      method: 'POST',
+      body: formData
+    })
+    .then(res => res.json())
+    .then(data => console.log("Success:", data))
+    .catch(err => console.error("Error:", err));
+  }
+</script>
+
+</body>
+</html>
